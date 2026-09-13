@@ -166,14 +166,23 @@ class FileController extends Controller
         ], 422);
     }
 
+    /**
+     * Wings hatasi.
+     *
+     * Dikkat: wings **olmayan bir dosya ya da dizin icin de** ayni hatayi
+     * donuyor ve Pterodactyl ikisini ayni istisnaya sariyor. Bu yuzden
+     * "dugum cevap vermiyor" diye kesin konusmuyoruz — olcumun soyleyemedigi
+     * seyi soylemek, hatanin kendisinden cok zaman kaybettirir.
+     */
     private function daemonHatasi(Server $s, DaemonConnectionException $e): JsonResponse
     {
         return new JsonResponse([
             'ok' => false,
             'error' => [
-                'message' => 'Dugum yaniti vermedi.',
+                'message' => 'Dosya islemi tamamlanamadi.',
                 'how' => sprintf(
-                    '%s dugumundeki wings servisi calisiyor mu?',
+                    'Iki ihtimal var: yol yok, ya da %s dugumundeki wings yanit vermiyor. '
+                    . 'Once ust dizini listeleyin — o calisiyorsa sorun yolda, dugumde degil.',
                     $s->node->name ?? 'bilinmeyen'
                 ),
                 'detail' => $e->getMessage(),

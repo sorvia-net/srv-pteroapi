@@ -15,7 +15,7 @@ info:
   name: "Sorvia Ptero API"
   identifier: "srvpteroapi"
   description: "Sorvia Command Center icin genisletilmis panel API'si: dugumler, sunucular, konsol, dosyalar ve kurulu Sorvia urunlerinin tespiti."
-  version: "1.0.1"
+  version: "1.0.5"
   target: "beta-2026-06"
   author: "Sorvia <support@sorvia.net>"
   icon: "public/icon.svg"

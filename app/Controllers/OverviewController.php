@@ -4,6 +4,7 @@ namespace Pterodactyl\BlueprintFramework\Extensions\srvpteroapi\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
+use Pterodactyl\BlueprintFramework\Libraries\ExtensionLibrary\Client\BlueprintClientLibrary as Blueprint;
 use Pterodactyl\Models\Allocation;
 use Pterodactyl\Models\Egg;
 use Pterodactyl\Models\Node;
@@ -18,13 +19,19 @@ use Pterodactyl\Models\User;
  */
 class OverviewController extends Controller
 {
+    public function __construct(private Blueprint $blueprint)
+    {
+    }
+
     /** Eklenti ayakta mi ve hangi surum. */
     public function ping(): JsonResponse
     {
         return new JsonResponse([
             'ok' => true,
             'extension' => 'srvpteroapi',
-            'version' => '1.0.0',
+            // Surum conf.yml'den geliyor. Sabit yazmak, eklenti guncellenince
+            // kontrol duzlemine yanlis surum bildirmek demekti.
+            'version' => $this->blueprint->extensionConfig('srvpteroapi')['info']['version'] ?? 'bilinmiyor',
             'panel' => config('app.version', 'bilinmiyor'),
             'time' => now()->toIso8601String(),
         ]);

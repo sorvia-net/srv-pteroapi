@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Pterodactyl\Models\Server;
+use Pterodactyl\Repositories\Wings\DaemonCommandRepository;
 use Pterodactyl\Repositories\Wings\DaemonPowerRepository;
 use Pterodactyl\Repositories\Wings\DaemonServerRepository;
 use Pterodactyl\Exceptions\Http\Connection\DaemonConnectionException;
@@ -22,6 +23,7 @@ class ServerController extends Controller
     public function __construct(
         private DaemonServerRepository $sunucuDeposu,
         private DaemonPowerRepository $gucDeposu,
+        private DaemonCommandRepository $komutDeposu,
     ) {
     }
 
@@ -138,7 +140,9 @@ class ServerController extends Controller
         }
 
         try {
-            $this->sunucuDeposu->setServer($server)->send($komut);
+            // Konsol komutu DaemonCommandRepository'de. DaemonServerRepository'nin
+            // send() metodu yok; oradan cagirmak "undefined method" verirdi.
+            $this->komutDeposu->setServer($server)->send($komut);
         } catch (DaemonConnectionException $e) {
             // Sunucu kapaliyken komut gonderilemez; bu beklenen bir durum
             // ve "baglanti hatasi" demekten daha faydali.

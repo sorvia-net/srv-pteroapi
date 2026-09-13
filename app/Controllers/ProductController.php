@@ -29,8 +29,19 @@ use Pterodactyl\BlueprintFramework\Libraries\ExtensionLibrary\Client\BlueprintCl
  */
 class ProductController extends Controller
 {
-    /** Sorvia'ya ait sayilan on ekler. */
-    private const ONEKLER = ['srv-', 'rxy-', 'srv_', 'rxy_'];
+    /**
+     * Sorvia'ya ait sayilan on ekler.
+     *
+     * Ayrac **istege bagli**: canli panelde gercek dosya adlari
+     * `SrvHubPvP-1.0.0.jar` ve `RxyJoinCommands-1.0.jar` cikti. Depolar
+     * `srv-hubpvp` diye adlandirilmis olsa da derlenen artifact projenin
+     * gorunen adini aliyor. Yalnizca `srv-` arasak hicbir sey bulamazdik —
+     * nitekim ilk taramada 14 sunucuda sifir sonuc verdi.
+     *
+     * On ek **basta** aranıyor, icerde degil: `DiscordSRV` icinde "srv"
+     * geciyor ama bizim urunumuz degil.
+     */
+    private const ONEKLER = ['srv', 'rxy'];
 
     /** Bakilacak dizinler ve hangi tur icerik bekledigimiz. */
     private const DIZINLER = [
@@ -58,6 +69,7 @@ class ProductController extends Controller
                 'name' => $server->name,
             ],
             'scanned' => $sonuc['taranan'],
+            'absent' => $sonuc['yok'],
             'unreachable' => $sonuc['ulasilamayan'],
             'products' => $sonuc['urunler'],
         ]);
@@ -125,19 +137,65 @@ class ProductController extends Controller
         ]);
     }
 
-    /** @return array{urunler: array, taranan: array, ulasilamayan: array} */
+    /**
+     * Tek sunucuyu tarar.
+     *
+     * Once **kok dizin** listeleniyor, sonra yalnizca gercekten var olan
+     * hedef dizinlere bakiliyor.
+     *
+     * Sebep: wings, olmayan bir dizin icin de kodu 500 olan bir hata
+     * donuyor ve Pterodactyl bunu erisim hatasiyla ayni istisnaya sariyor.
+     * Dogrudan /plugins listelemek, plugins dizini olmayan her sunucuyu
+     * "erisilemiyor" diye isaretliyordu — 14 sunucunun 14'u birden. Yanlis
+     * teshis, teshis olmamasindan kotudur.
+     *
+     * Yan fayda: sunucu basina uc istek yerine bir istek artı yalnizca var
+     * olan dizinler kadar istek.
+     *
+     * @return array{urunler: array, taranan: array, yok: array, ulasilamayan: array}
+     */
     private function sunucuyuTara(Server $server): array
     {
+        try {
+            $kok = $this->depo->setServer($server)->getDirectory('/');
+        } catch (DaemonConnectionException $e) {
+            // Kok dizin okunamiyorsa sunucu gercekten erisilemez durumda.
+            return [
+                'urunler' => [],
+                'taranan' => [],
+                'yok' => [],
+                'ulasilamayan' => [['path' => '/', 'reason' => $e->getMessage()]],
+            ];
+        }
+
+        $kokAdlari = [];
+        foreach ($kok as $oge) {
+            $ad = (string) ($oge['name'] ?? '');
+            if ($ad !== '') {
+                $kokAdlari[$ad] = true;
+            }
+        }
+
         $urunler = [];
         $taranan = [];
+        $yok = [];
         $ulasilamayan = [];
 
         foreach (self::DIZINLER as $hedef) {
+            $ad = ltrim($hedef['path'], '/');
+
+            // Dizin kokte gorunmuyorsa bu bir hata degil: o sunucuda o tur
+            // icerik yok. Istek bile atmiyoruz.
+            if (!isset($kokAdlari[$ad])) {
+                $yok[] = $hedef['path'];
+                continue;
+            }
+
             try {
                 $liste = $this->depo->setServer($server)->getDirectory($hedef['path']);
             } catch (DaemonConnectionException $e) {
-                // Dizin yoksa ya da dugum yanit vermiyorsa: ikisi de "burada
-                // bakamadik" demek. Hangisi oldugunu mesaj soyluyor.
+                // Kok okunabildigi hâlde burasi okunamiyorsa gercekten bir
+                // sorun var (izin, bozuk baglama, yaris durumu).
                 $ulasilamayan[] = [
                     'path' => $hedef['path'],
                     'reason' => $e->getMessage(),
@@ -148,36 +206,74 @@ class ProductController extends Controller
             $taranan[] = $hedef['path'];
 
             foreach ($liste as $oge) {
-                $ad = (string) ($oge['name'] ?? '');
-                if ($ad === '' || !$this->sorviaMi($ad)) {
+                $dosyaAdi = (string) ($oge['name'] ?? '');
+                if ($dosyaAdi === '' || !$this->sorviaMi($dosyaAdi)) {
+                    continue;
+                }
+
+                $dizinMi = ((bool) ($oge['is_file'] ?? true)) === false;
+                if (!$this->artifactMi($hedef, $dosyaAdi, $dizinMi)) {
                     continue;
                 }
 
                 $urunler[] = [
-                    'product' => $this->urunAdi($ad),
-                    'file' => $ad,
+                    'product' => $this->urunAdi($dosyaAdi),
+                    'file' => $dosyaAdi,
                     'kind' => $hedef['kind'],
-                    'path' => rtrim($hedef['path'], '/') . '/' . $ad,
-                    'version' => $this->surumCikar($ad),
+                    'path' => rtrim($hedef['path'], '/') . '/' . $dosyaAdi,
+                    'version' => $this->surumCikar($dosyaAdi),
                     'size' => $oge['size'] ?? null,
                     'modified_at' => $oge['modified_at'] ?? null,
-                    'is_directory' => (bool) ($oge['is_file'] ?? true) === false,
+                    'is_directory' => $dizinMi,
                 ];
             }
         }
 
-        return ['urunler' => $urunler, 'taranan' => $taranan, 'ulasilamayan' => $ulasilamayan];
+        return [
+            'urunler' => $urunler,
+            'taranan' => $taranan,
+            'yok' => $yok,
+            'ulasilamayan' => $ulasilamayan,
+        ];
     }
 
     private function sorviaMi(string $ad): bool
     {
         $kucuk = strtolower($ad);
         foreach (self::ONEKLER as $onek) {
-            if (str_starts_with($kucuk, $onek)) {
+            if (!str_starts_with($kucuk, $onek)) {
+                continue;
+            }
+
+            // On ekten sonra ya ayrac ya da yeni bir kelime gelmeli.
+            // Boylece "srvany" gibi rastgele bir ad esiklenmiyor ama
+            // "SrvHubPvP" ve "srv-core" ikisi de yakalaniyor.
+            $kalan = substr($ad, strlen($onek));
+            if ($kalan === '') {
+                continue;
+            }
+            $ilk = $kalan[0];
+            if ($ilk === '-' || $ilk === '_' || ctype_upper($ilk)) {
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Bu dosya bu dizinde bir urun sayilir mi?
+     *
+     * Minecraft'ta artifact **jar**; yanindaki ayni adli klasor eklentinin
+     * ayar dizini ve ayri bir kurulum degil — ikisini birden saymak her
+     * urunu iki kez gostermek olurdu. FiveM'de ise kaynagin kendisi bir
+     * dizin, orada tersi gecerli.
+     */
+    private function artifactMi(array $hedef, string $ad, bool $dizinMi): bool
+    {
+        if ($hedef['kind'] === 'fivem-resource') {
+            return $dizinMi;
+        }
+        return !$dizinMi && preg_match('/\.(jar|phar)$/i', $ad) === 1;
     }
 
     /** "srv-core-1.2.0.jar" → "srv-core" */

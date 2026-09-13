@@ -188,11 +188,16 @@ var oluş sebebi olan IP kısıtını geri getirirlerdi.
 
 | | |
 |---|---|
-| Eklenti | 1.0.1 |
+| Eklenti | 1.0.2 |
 | Hedef Blueprint | `beta-2026-06` |
-| Panel | Pterodactyl 1.11.x |
+| Panel | Pterodactyl 1.14.1 |
 
-**Test durumu:** 1.0.0 canlı panele kurulamadı; 1.0.1 yukarıdaki dört hatayı
-düzeltiyor ama **uçlar henüz canlı panele karşı çalıştırılmadı.** İlk kurulumu
-test olarak görün. `Repositories\Wings\*` sınıf adları 1.11.11 dışındaki
-sürümlerde değişmiş olabilir.
+**1.0.2 — sürüm uyumu.** Kod 1.11.11 varsayılarak yazılmıştı; gerçek panel
+**1.14.1** çıktı ve orada `DaemonServerRepository::send()` yok. Konsol komutu
+`DaemonCommandRepository`'ye taşındı — aksi hâlde `POST /servers/{id}/command`
+"undefined method" ile patlardı.
+
+Kullanılan bütün depo metotları panelin 1.14.1 kaynağıyla tek tek
+karşılaştırıldı ve geri kalanı tutuyor: `getDirectory`, `getContent`,
+`putContent`, `renameFiles`, `deleteFiles`, `getSystemInformation`,
+`getDetails`, `DaemonPowerRepository::send`, `setServer`, `setNode`.
