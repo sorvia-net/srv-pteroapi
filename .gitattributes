@@ -1,0 +1,10 @@
+# Panel sunucusu Linux. CRLF ile giden bir kabuk betigi
+# "bad interpreter: /bin/bash^M" ile patlar; PHP ve blade dosyalarinda da
+# satir sonu farki gereksiz diff uretir.
+* text=auto eol=lf
+*.sh text eol=lf
+*.php text eol=lf
+*.blade.php text eol=lf
+*.yml text eol=lf
+*.svg text eol=lf
+*.css text eol=lf
