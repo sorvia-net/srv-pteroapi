@@ -1,29 +1,57 @@
 <?php
 
-namespace Pterodactyl\BlueprintFramework\Extensions\srvpteroapi\Admin;
+/*
+ * Blueprint bu dosyayi **oldugu gibi** kopyaliyor:
+ *   admin/Controller.php -> app/Http/Controllers/Admin/Extensions/srvpteroapi/
+ *                           srvpteroapiExtensionController.php
+ *
+ * Namespace ve sinif adini Blueprint duzeltmiyor. Bu yuzden ikisi de
+ * hedefteki yolun tam karsiligi olmak zorunda; "Controller" adinda bir
+ * sinif birakirsak yonetim sayfasi autoload hatasiyla 500 doner.
+ *
+ * Rota adlari routes/blueprint.php tarafindan uretiliyor:
+ *   GET    /admin/extensions/srvpteroapi        -> index()
+ *   POST   /admin/extensions/srvpteroapi        -> post()
+ *   PATCH  /admin/extensions/srvpteroapi        -> update()
+ * Formlar POST gonderdigi icin islem mantigi post() icinde.
+ */
 
+namespace Pterodactyl\Http\Controllers\Admin\Extensions\srvpteroapi;
+
+use Illuminate\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\View\Factory as ViewFactory;
 use Pterodactyl\Http\Controllers\Controller;
-use Pterodactyl\BlueprintFramework\Libraries\ExtensionLibrary\Admin\BlueprintAdminLibrary as Blueprint;
+use Pterodactyl\Services\Helpers\SoftwareVersionService;
+use Pterodactyl\BlueprintFramework\Libraries\ExtensionLibrary\Admin\BlueprintAdminLibrary as BlueprintExtensionLibrary;
 
-/**
- * Yonetim paneli: jeton uretimi ve IP listesi.
- *
- * Jeton **yalnizca ozet olarak** saklaniyor. Panel veritabaninin dokumu
- * tek basina API erisimi vermemeli; ozetten jeton geri uretilemez.
- *
- * Uretilen jeton bir kez gosteriliyor. Kaybedilirse yenisi uretilir —
- * eskisini "hatirlatmak" mumkun degil ve olmamali.
- */
-class Controller extends \Pterodactyl\Http\Controllers\Admin\Extensions\BlueprintExtensionController
+class srvpteroapiExtensionController extends Controller
 {
-    public function __construct(private Blueprint $blueprint)
-    {
-        parent::__construct();
+    public function __construct(
+        private BlueprintExtensionLibrary $blueprint,
+        private SoftwareVersionService $version,
+        private ViewFactory $view,
+    ) {
     }
 
-    public function update(Request $request): RedirectResponse
+    public function index(): View
+    {
+        return $this->view->make('admin.extensions.srvpteroapi.index', [
+            'blueprint' => $this->blueprint,
+            'version' => $this->version,
+            'root' => '/admin/extensions/srvpteroapi',
+        ]);
+    }
+
+    /**
+     * Jeton uretimi, iptal ve IP listesi.
+     *
+     * Jeton **yalnizca ozet olarak** saklaniyor. Panel veritabaninin dokumu
+     * tek basina API erisimi vermemeli; ozetten jeton geri uretilemez.
+     * Uretilen jeton bir kez gosteriliyor; kaybedilirse yenisi uretilir.
+     */
+    public function post(Request $request): RedirectResponse
     {
         $eylem = (string) $request->input('action', '');
 
@@ -50,11 +78,16 @@ class Controller extends \Pterodactyl\Http\Controllers\Admin\Extensions\Blueprin
             return redirect()->back()->with('success', 'Jeton iptal edildi. API kapali.');
         }
 
-        // IP listesi: bos birakilabilir. Zorunlu kilmak, bu eklentiyi var
+        // IP listesi bos birakilabilir. Zorunlu kilmak, bu eklentiyi var
         // edis sebebimizi (IP kisitina takilmak) tekrar uretirdi.
-        $ipler = trim((string) $request->input('allowed_ips', ''));
-        $this->blueprint->dbSet('srvpteroapi', 'allowed_ips', $ipler);
+        $this->blueprint->dbSet('srvpteroapi', 'allowed_ips', trim((string) $request->input('allowed_ips', '')));
 
         return redirect()->back()->with('success', 'Ayarlar kaydedildi.');
+    }
+
+    /** PATCH ile gelen istekler de ayni mantigi kullansin. */
+    public function update(Request $request): RedirectResponse
+    {
+        return $this->post($request);
     }
 }

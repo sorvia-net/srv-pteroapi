@@ -44,7 +44,7 @@
             </tr>
             <tr>
               <td><strong>Taban adres</strong></td>
-              <td><code>{{ url('/api/sorvia/v1') }}</code></td>
+              <td><code>{{ url('/extensions/srvpteroapi/v1') }}</code></td>
             </tr>
           </tbody>
         </table>
@@ -106,22 +106,25 @@
         <h3 class="box-title">Uclar</h3>
       </div>
       <div class="box-body">
-        <pre style="font-size:12px;line-height:1.7">GET    /api/sorvia/v1/ping
-GET    /api/sorvia/v1/overview                      panel ozeti, dugum kapasiteleri
-GET    /api/sorvia/v1/nodes                         dugumler
-GET    /api/sorvia/v1/nodes/{id}                    dugum detayi + canli durum
-GET    /api/sorvia/v1/servers                       butun sunucular (node, egg, sahip, port)
-GET    /api/sorvia/v1/servers/{id}                  limitler, allocation'lar, degiskenler
-GET    /api/sorvia/v1/servers/{id}/usage            canli CPU/RAM/disk
-POST   /api/sorvia/v1/servers/{id}/power            {"signal":"start|stop|restart|kill"}
-POST   /api/sorvia/v1/servers/{id}/command          {"command":"say merhaba"}
-GET    /api/sorvia/v1/servers/{id}/files?path=/     dizin listesi
-GET    /api/sorvia/v1/servers/{id}/files/contents   dosya oku
-PUT    /api/sorvia/v1/servers/{id}/files/contents   dosya yaz
-POST   /api/sorvia/v1/servers/{id}/files/rename     yeniden adlandir
-DELETE /api/sorvia/v1/servers/{id}/files            sil
-GET    /api/sorvia/v1/products                      butun sunuculardaki Sorvia urunleri
-GET    /api/sorvia/v1/servers/{id}/products         tek sunucudaki urunler</pre>
+        <p class="text-muted small" style="margin-bottom:8px">
+          Asagidaki yollar <strong>taban adresin ustune</strong> eklenir.
+        </p>
+        <pre style="font-size:12px;line-height:1.7">GET    /ping                              eklenti ve panel surumu
+GET    /overview                          panel ozeti, dugum kapasiteleri
+GET    /nodes                             dugumler
+GET    /nodes/{id}                        dugum detayi + canli durum
+GET    /servers                           butun sunucular (node, egg, sahip, port)
+GET    /servers/{id}                      limitler, allocation'lar, degiskenler
+GET    /servers/{id}/usage                canli CPU/RAM/disk
+POST   /servers/{id}/power                {"signal":"start|stop|restart|kill"}
+POST   /servers/{id}/command              {"command":"say merhaba"}
+GET    /servers/{id}/files?path=/         dizin listesi
+GET    /servers/{id}/files/contents       dosya oku
+PUT    /servers/{id}/files/contents       dosya yaz
+POST   /servers/{id}/files/rename         yeniden adlandir
+DELETE /servers/{id}/files                sil
+GET    /products                          butun sunuculardaki Sorvia urunleri
+GET    /servers/{id}/products             tek sunucudaki urunler</pre>
         <p class="text-muted small">
           Kimlik: <code>Authorization: Bearer &lt;jeton&gt;</code> ya da
           <code>X-Sorvia-Token: &lt;jeton&gt;</code>

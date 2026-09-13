@@ -1,10 +1,22 @@
+# Blueprint eklenti tanimi.
+#
+# Dikkat edilecek uc sey (ucu de ilk kurulumda hata verdi):
+#
+#   1. "info.target" **Blueprint surumu**, Pterodactyl surumu degil.
+#      1.11.11 yazmak "beta-2026-06 ile uyumsuz" uyarisi uretiyordu.
+#   2. Burada yazilan her yol bundle icinde **gercekten var olmali**.
+#      Bos bir klasor git ve zip icinde hayatta kalmaz; olmayan yol
+#      "points towards one or more files that do not exist" ile
+#      kurulumu komple durdurur. Bu yuzden kullanmadigimiz hicbir
+#      anahtar burada bulunmuyor.
+#   3. "requests.controllers" birakildi, yerine "requests.app" geldi.
+
 info:
   name: "Sorvia Ptero API"
   identifier: "srvpteroapi"
   description: "Sorvia Command Center icin genisletilmis panel API'si: dugumler, sunucular, konsol, dosyalar ve kurulu Sorvia urunlerinin tespiti."
-  flags: "hasInstallScript"
-  version: "1.0.0"
-  target: "1.11.11"
+  version: "1.0.1"
+  target: "beta-2026-06"
   author: "Sorvia <support@sorvia.net>"
   icon: "public/icon.svg"
   website: "https://sorvia.net"
@@ -14,18 +26,10 @@ admin:
   controller: "admin/Controller.php"
   css: "admin/style.css"
 
-dashboard:
-  css: ""
-
 data:
-  directory: "data"
   public: "public"
 
 requests:
-  views: "views"
-  controllers: "controllers"
+  app: "app"
   routers:
     web: "routers/web.php"
-
-database:
-  migrations: "database/migrations"

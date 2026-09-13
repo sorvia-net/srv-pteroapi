@@ -6,6 +6,7 @@ use Pterodactyl\BlueprintFramework\Extensions\srvpteroapi\Controllers\NodeContro
 use Pterodactyl\BlueprintFramework\Extensions\srvpteroapi\Controllers\OverviewController;
 use Pterodactyl\BlueprintFramework\Extensions\srvpteroapi\Controllers\ProductController;
 use Pterodactyl\BlueprintFramework\Extensions\srvpteroapi\Controllers\ServerController;
+use Pterodactyl\Http\Middleware\VerifyCsrfToken;
 use Pterodactyl\BlueprintFramework\Extensions\srvpteroapi\Middleware\TokenMiddleware;
 
 /*
@@ -30,9 +31,24 @@ use Pterodactyl\BlueprintFramework\Extensions\srvpteroapi\Middleware\TokenMiddle
 | Butun uclar salt okuma degil — guc ve dosya yazma da var — ama hepsi
 | Pterodactyl'in kendi servis katmanindan geciyor; dogrudan SQL ya da
 | dosya sistemi dokunusu yok.
+|
+| Yol onegi:
+|   Blueprint web rotalarina iki onek ekliyor — RouteServiceProvider
+|   "/extensions", routes/blueprint/web.php ise eklenti tanimlayicisi.
+|   Dolayisiyla asagidaki "v1" oneki su adrese denk geliyor:
+|
+|       /extensions/srvpteroapi/v1/...
+|
+| CSRF:
+|   Web rotalari "blueprint" middleware grubunda ve o grup
+|   VerifyCsrfToken iceriyor. Tarayicidan degil sunucudan cagrilan bir
+|   API icin CSRF jetonu diye bir sey yok; disarida birakilmazsa butun
+|   POST/PUT/DELETE istekleri 419 doner. Kimlik dogrulamasini zaten
+|   TokenMiddleware yapiyor.
 */
 
-Route::prefix('api/sorvia/v1')
+Route::prefix('v1')
+    ->withoutMiddleware([VerifyCsrfToken::class])
     ->middleware(TokenMiddleware::class)
     ->group(function () {
         // ── durum ──

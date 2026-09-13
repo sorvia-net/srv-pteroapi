@@ -24,18 +24,6 @@ yönetici düzeyinde dosya ve konsol erişimi.
 `blueprint -install` bir **klasör değil, `.blueprint` dosyası** arar ve o
 dosya panelin kök dizininde olmalıdır. Depoyu klonlamak tek başına yetmez.
 
-**Yol 1 — release'ten (en kısa):**
-
-```bash
-cd /var/www/pterodactyl
-# Depo özel olduğu için jeton gerekiyor; <TOKEN> yerine bir GitHub PAT koyun.
-curl -fsSL -H "Authorization: Bearer <TOKEN>"      -H "Accept: application/octet-stream"      -o srv-pteroapi.blueprint      "$(curl -fsSL -H 'Authorization: Bearer <TOKEN>'         https://api.github.com/repos/sorvia-net/srv-pteroapi/releases/tags/v1.0.0         | grep -o '"url": "[^"]*assets/[0-9]*"' | head -1 | cut -d'"' -f4)"
-
-blueprint -install srv-pteroapi
-```
-
-**Yol 2 — klonlayarak:**
-
 ```bash
 cd /tmp
 git clone https://github.com/sorvia-net/srv-pteroapi.git
@@ -68,8 +56,11 @@ Kaldırma komutu **identifier** ister (`srvpteroapi`), kurulum ise dosya adını
 
 ## Uçlar
 
-Taban adres: `https://<panel>/api/sorvia/v1`
+Taban adres: `https://<panel>/extensions/srvpteroapi/v1`
 Kimlik: `Authorization: Bearer <jeton>` ya da `X-Sorvia-Token: <jeton>`
+
+Taban adresteki `/extensions/srvpteroapi` **Blueprint'in kendi eklediği**
+önektir, bizim seçimimiz değil — ayrıntısı aşağıdaki notlarda.
 
 | Uç | Ne döner |
 |---|---|
@@ -134,14 +125,74 @@ Her hata ne olduğunu ve ne yapılacağını söyler:
 }
 ```
 
+## Blueprint notları
+
+Bu bölüm 1.0.0'ın kurulamamasının sebeplerini kayıt altına alıyor. Dördü de
+dokümantasyondan değil, framework kaynağından çıktı.
+
+**1. `info.target` Blueprint sürümüdür, Pterodactyl sürümü değil.**
+Kurulum betiğindeki karşılaştırma şu:
+
+```bash
+if [[ $target != "$VERSION" ]]; then PRINT WARNING "... is built for version $target, but your version is $VERSION."; fi
+```
+
+`$VERSION` Blueprint'in kendi sürümü (`beta-2026-06`). Oraya `1.11.11` yazmak
+panelin Pterodactyl sürümünü değil, Blueprint sürümünü yanlış beyan etmek
+oluyordu.
+
+**2. `conf.yml`'de yazılan her yol pakette gerçekten var olmalı.**
+Kurulum betiği hepsini tek bir `if` bloğunda kontrol edip
+`Extension configuration points towards one or more files that do not exist`
+ile duruyor — hangisinin eksik olduğunu **söylemiyor**. Bizde dördü birden
+eksikti: `views/`, `database/migrations/` ve `data/` boş oldukları için git ve
+zip içinde hayatta kalmamışlardı (`data/` ayrıca `.gitignore`'daydı),
+`requests.controllers` ise taşınmış bir klasörü gösteriyordu. Kullanılmayan
+anahtarı silmek, boş klasörü `.gitkeep` ile ayakta tutmaya tercih edilir.
+
+**3. Web rotaları iki önek alır.** `RouteServiceProvider` `/extensions` ekler,
+`routes/blueprint/web.php` ise dosya adından eklenti tanımlayıcısını ekler.
+Router dosyasında yazdığınız önek bunların **üstüne** biner:
+
+```
+routers/web.php içinde Route::prefix('v1')
+        ↓
+/extensions/srvpteroapi/v1/...
+```
+
+**4. Web rotaları CSRF korumasındadır.** `blueprint` middleware grubu
+`VerifyCsrfToken` içeriyor. Tarayıcıdan değil sunucudan çağrılan bir API'de
+CSRF jetonu diye bir şey olmadığından bütün `POST`/`PUT`/`DELETE` istekleri
+419 dönerdi. Çözüm rota grubunda
+`->withoutMiddleware([VerifyCsrfToken::class])`. Kimlik doğrulamayı zaten
+kendi `TokenMiddleware`'imiz yapıyor.
+
+**Bonus — admin controller'ın adı serbest değil.** Blueprint
+`admin.controller` dosyasını namespace'ine dokunmadan şuraya kopyalıyor:
+
+```
+app/Http/Controllers/Admin/Extensions/{identifier}/{identifier}ExtensionController.php
+```
+
+Dosyadaki namespace ve sınıf adı bu yolun tam karşılığı olmak zorunda. Rota
+adları da framework tarafından üretiliyor: `index` (GET), `post` (POST),
+`update` (PATCH), `put` (PUT), `delete` (DELETE). Yönetim sayfasındaki formlar
+POST gönderdiği için iş mantığı `post()` içinde.
+
+**Neden `web` router, `application`/`client` değil?** Diğer ikisi sırasıyla
+`/api/application/extensions/{id}/` ve `/api/client/extensions/{id}/` öneklerini
+alıyor ama panelin kendi API anahtarını şart koşuyorlar — yani bu eklentinin
+var oluş sebebi olan IP kısıtını geri getirirlerdi.
+
 ## Sürüm
 
 | | |
 |---|---|
-| Eklenti | 1.0.0 — [release](https://github.com/sorvia-net/srv-pteroapi/releases/tag/v1.0.0) |
-| Hedef panel | Pterodactyl 1.11.x |
-| Blueprint | ≥ 1.6 |
+| Eklenti | 1.0.1 |
+| Hedef Blueprint | `beta-2026-06` |
+| Panel | Pterodactyl 1.11.x |
 
-**Test durumu:** canlı panele karşı henüz çalıştırılmadı. Yazıldığı hedef
-sürüm 1.11.11; farklı bir sürümde `Repositories\Wings\*` sınıf adları
-değişmiş olabilir.
+**Test durumu:** 1.0.0 canlı panele kurulamadı; 1.0.1 yukarıdaki dört hatayı
+düzeltiyor ama **uçlar henüz canlı panele karşı çalıştırılmadı.** İlk kurulumu
+test olarak görün. `Repositories\Wings\*` sınıf adları 1.11.11 dışındaki
+sürümlerde değişmiş olabilir.
