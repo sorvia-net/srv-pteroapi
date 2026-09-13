@@ -24,15 +24,22 @@ yönetici düzeyinde dosya ve konsol erişimi.
 `blueprint -install` bir **klasör değil, `.blueprint` dosyası** arar ve o
 dosya panelin kök dizininde olmalıdır. Depoyu klonlamak tek başına yetmez.
 
+**Yol 1 — release'ten (en kısa):**
+
 ```bash
-# 1. Depoyu gecici bir yere klonla
+cd /var/www/pterodactyl
+# Depo özel olduğu için jeton gerekiyor; <TOKEN> yerine bir GitHub PAT koyun.
+curl -fsSL -H "Authorization: Bearer <TOKEN>"      -H "Accept: application/octet-stream"      -o srv-pteroapi.blueprint      "$(curl -fsSL -H 'Authorization: Bearer <TOKEN>'         https://api.github.com/repos/sorvia-net/srv-pteroapi/releases/tags/v1.0.0         | grep -o '"url": "[^"]*assets/[0-9]*"' | head -1 | cut -d'"' -f4)"
+
+blueprint -install srv-pteroapi
+```
+
+**Yol 2 — klonlayarak:**
+
+```bash
 cd /tmp
 git clone https://github.com/sorvia-net/srv-pteroapi.git
-
-# 2. Paketi panelin koküne kopyala
 cp /tmp/srv-pteroapi/srv-pteroapi.blueprint /var/www/pterodactyl/
-
-# 3. Kur
 cd /var/www/pterodactyl
 blueprint -install srv-pteroapi
 ```
@@ -131,7 +138,7 @@ Her hata ne olduğunu ve ne yapılacağını söyler:
 
 | | |
 |---|---|
-| Eklenti | 1.0.0 |
+| Eklenti | 1.0.0 — [release](https://github.com/sorvia-net/srv-pteroapi/releases/tag/v1.0.0) |
 | Hedef panel | Pterodactyl 1.11.x |
 | Blueprint | ≥ 1.6 |
 
