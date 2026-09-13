@@ -12,8 +12,9 @@ vendor/
 .npmrc
 
 # ── Sorvia: paketlenmis cikti ──
-# .blueprint dosyasi kaynaktan uretiliyor; surum kontrolune girmez.
-*.blueprint
+# .zip ara ciktidir. .blueprint ise dagitilan dosyanin kendisi ve depoda
+# duruyor: "blueprint -install" klasor degil o dosyayi ariyor, klonlayan
+# kisi ayrica paketlemek zorunda kalmasin.
 *.zip
 
 # ── Sorvia: yerel ──

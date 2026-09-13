@@ -21,10 +21,27 @@ yönetici düzeyinde dosya ve konsol erişimi.
 
 ## Kurulum
 
+`blueprint -install` bir **klasör değil, `.blueprint` dosyası** arar ve o
+dosya panelin kök dizininde olmalıdır. Depoyu klonlamak tek başına yetmez.
+
 ```bash
-# Panel sunucusunda, blueprint kurulu olmalı
+# 1. Depoyu gecici bir yere klonla
+cd /tmp
+git clone https://github.com/sorvia-net/srv-pteroapi.git
+
+# 2. Paketi panelin koküne kopyala
+cp /tmp/srv-pteroapi/srv-pteroapi.blueprint /var/www/pterodactyl/
+
+# 3. Kur
 cd /var/www/pterodactyl
 blueprint -install srv-pteroapi
+```
+
+Kaynaktan yeniden paketlemek isterseniz (kodu değiştirdiyseniz):
+
+```bash
+cd /tmp/srv-pteroapi && ./paketle.sh
+cp srv-pteroapi.blueprint /var/www/pterodactyl/
 ```
 
 Kurulumdan sonra **Yönetim → Extensions → Sorvia Ptero API** bölümünden
@@ -32,6 +49,15 @@ Kurulumdan sonra **Yönetim → Extensions → Sorvia Ptero API** bölümünden
 
 Jetonu Command Center'da Pterodactyl entegrasyonunun `extension_token`
 alanına girin.
+
+### Kaldırma
+
+```bash
+cd /var/www/pterodactyl && blueprint -remove srvpteroapi
+```
+
+Kaldırma komutu **identifier** ister (`srvpteroapi`), kurulum ise dosya adını
+(`srv-pteroapi`). Blueprint'in bu ikiliği kafa karıştırıcı ama böyle.
 
 ## Uçlar
 
