@@ -1,0 +1,31 @@
+info:
+  name: "Sorvia Ptero API"
+  identifier: "srvpteroapi"
+  description: "Sorvia Command Center icin genisletilmis panel API'si: dugumler, sunucular, konsol, dosyalar ve kurulu Sorvia urunlerinin tespiti."
+  flags: "hasInstallScript"
+  version: "1.0.0"
+  target: "1.11.11"
+  author: "Sorvia <support@sorvia.net>"
+  icon: "public/icon.svg"
+  website: "https://sorvia.net"
+
+admin:
+  view: "admin/index.blade.php"
+  controller: "admin/Controller.php"
+  css: "admin/style.css"
+
+dashboard:
+  css: ""
+
+data:
+  directory: "data"
+  public: "public"
+
+requests:
+  views: "views"
+  controllers: "controllers"
+  routers:
+    web: "routers/web.php"
+
+database:
+  migrations: "database/migrations"

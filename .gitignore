@@ -1,0 +1,22 @@
+# ── Sorvia: derleme ciktilari ──
+node_modules/
+vendor/
+*.log
+
+# ── Sorvia: sirlar — bunlar depoya ASLA girmemeli ──
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.npmrc
+
+# ── Sorvia: paketlenmis cikti ──
+# .blueprint dosyasi kaynaktan uretiliyor; surum kontrolune girmez.
+*.blueprint
+*.zip
+
+# ── Sorvia: yerel ──
+.DS_Store
+Thumbs.db
+data/

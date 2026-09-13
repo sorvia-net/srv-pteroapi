@@ -1,0 +1,6 @@
+/* Jeton bloğu seçilebilir ve tek satırda dursun: kopyalarken satır sonu
+   karakteri araya girmesin. */
+.box-body pre {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
