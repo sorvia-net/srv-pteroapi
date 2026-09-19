@@ -188,12 +188,16 @@ var oluş sebebi olan IP kısıtını geri getirirlerdi.
 
 | | |
 |---|---|
-| Eklenti | 1.0.2 |
+| Eklenti | 1.0.5 |
 | Hedef Blueprint | `beta-2026-06` |
 | Panel | Pterodactyl 1.14.1 |
 
-**1.0.2 — sürüm uyumu.** Kod 1.11.11 varsayılarak yazılmıştı; gerçek panel
-**1.14.1** çıktı ve orada `DaemonServerRepository::send()` yok. Konsol komutu
+**1.0.5 — canlı panelde kuruldu.** `host.rxydev.com` üzerinde kurulum başarılı,
+16 ucun hepsi kayıtlı ve çalışıyor. Üç hata yalnızca gerçek veriyle ortaya
+çıktı; hiçbiri yerel doğrulamada görünmüyordu.
+
+**Sürüm uyumu.** Kod 1.11.11 varsayılarak yazılmıştı; gerçek panel **1.14.1**
+çıktı ve orada `DaemonServerRepository::send()` yok. Konsol komutu
 `DaemonCommandRepository`'ye taşındı — aksi hâlde `POST /servers/{id}/command`
 "undefined method" ile patlardı.
 
@@ -201,3 +205,29 @@ Kullanılan bütün depo metotları panelin 1.14.1 kaynağıyla tek tek
 karşılaştırıldı ve geri kalanı tutuyor: `getDirectory`, `getContent`,
 `putContent`, `renameFiles`, `deleteFiles`, `getSystemInformation`,
 `getDetails`, `DaemonPowerRepository::send`, `setServer`, `setNode`.
+
+**Rota bağlama anahtarı.** Pterodactyl'in taban modeli `getRouteKeyName()` ile
+`uuid` döndürüyor, dolayısıyla `/nodes/4` ve `/servers/17` 404 veriyordu.
+Rotalar artık `{node:id}` ve `{server:id}`.
+
+**Ürün tespiti hiçbir şey bulamıyordu.** İki ayrı sebep vardı:
+
+- Olmayan bir dizin için wings de 500 dönüyor ve Pterodactyl bunu erişim
+  hatasıyla aynı istisnaya sarıyor — `plugins/` dizini olmayan her sunucu
+  "erişilemiyor" diye işaretleniyordu, 14 sunucunun 14'ü birden. Artık önce
+  kök dizin listeleniyor; hedef dizin kökte yoksa istek bile atılmıyor ve
+  `absent` olarak bildiriliyor. Erişilemeyen sunucu sayısı 14'ten 1'e düştü —
+  o da gerçekten kapalı.
+- Ön ek listesi gerçek isimlendirmeye uymuyordu. Panelde dosyalar
+  `SrvHubPvP-1.0.0.jar` ve `RxyJoinCommands-1.0.jar`; depo `srv-hubpvp` diye
+  adlandırılmış olsa da artifact projenin **görünen** adını alıyor. Ayraç artık
+  isteğe bağlı, ama ön ek baştan aranıyor: `DiscordSRV` içinde "srv" geçmesi
+  onu bizim ürünümüz yapmıyor. Jar'ın yanındaki aynı adlı ayar klasörü de
+  artık sayılmıyor — Minecraft'ta artifact jar'dır, FiveM'de dizin.
+
+Küçük: `/ping` sürümü sabit `1.0.0` yazıyordu, artık `conf.yml`'den okunuyor.
+Dosya hatası "düğüm cevap vermiyor" diye kesin konuşmuyor; olmayan yol ile
+erişilemeyen düğüm aynı hatayı ürettiği için iki ihtimali birden söylüyor.
+
+**1.0.1 — kurulumu engelleyen dört hata.** Ayrıntısı yukarıdaki Blueprint
+notları bölümünde.
